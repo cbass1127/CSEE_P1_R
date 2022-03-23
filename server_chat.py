@@ -51,12 +51,14 @@ def send_mail(sock, name, addr):
     s = 'MAIL '
     clnt_addr = client_ips_map[name][0]
     clnt_port = client_ips_map[name][1]
+    if not os.path.exists(name):
+        return
     with open(name) as f:
         for line in f:
-            s+= (line + ' ')
+            s+= (line + '\n')
     send_s = s.encode()
     util.Send(sock, send_s, (clnt_addr, clnt_port))
-
+    os.remove(name)
 
 def add_client(address, port, name, online_status):
     client_ips[address] = 1
@@ -112,6 +114,7 @@ def main():
             client_ips_map[name] = (clnt_addr, clnt_port, False)
             send_ACK(server_sock, sender_address)
             broadcast_update(server_sock, client_ips_map[name][0], client_ips_map[name][1], name, False)
+            util.pmessage(accept_msg)
         elif(len(split_message) == 3 and split_message[0] == 'sendsave' and split_message[1] in client_ips_map.keys()):
             name = split_message[1]
             sender_name = client_map[sender_address][0]
@@ -131,14 +134,19 @@ def main():
                     client_ips_map[name] = (clnt_addr, clnt_port, False)
                     client_map[(clnt_addr, clnt_port)] = (name , False)
                     broadcast_update(server_sock, clnt_addr, clnt_port, name, False)
+                    util.pmessage(accept_msg)
             else:
                 send_ERR(server_sock, sender_address)
                 broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
         elif(len(split_message) == 2 and split_message[0] == str(util.MAGIC_NUM) + 'R'):
             name = split_message[1]
             send_mail(server_sock, name, (clnt_addr, clnt_port))
-        
-
+            clnt_addr = client_ips_map[name][0]
+            clnt_port = client_ips_map[name][1]
+            client_map[(clnt_addr, clnt_port)] = (name, True)
+            client_ips_map[name] = (clnt_addr, clnt_port, True)
+            broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
+            util.pmessage(accept_msg)
 
 if __name__ == '__main__':
     main()

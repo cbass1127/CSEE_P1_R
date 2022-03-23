@@ -122,9 +122,13 @@ def reg_to_server(sock, name, addr):
     util.Send(sock, send_s, addr)
 
 def display_mail(messages):
-    print(messages)
+    util.pmessage('YOU HAVE MESSAGES')
+    lines = messages.split('\n') 
+    for line in lines:
+        if line.strip() != '':
+            util.pmessage(line + '\n', False)
 
-#def add_client(address, port, name):
+#def add_client(address, port, name)::
 #    online_status = True
 #    client_ips[address] = 1
 #    client_map[(address, port)] = (name, online_status)
@@ -219,7 +223,7 @@ def clnt_listen(sock):
         elif sender_message == str(util.MAGIC_NUM) + 'O':
             send_ACK(sock, server_dest)
         elif split_message[0] == 'MAIL':
-            display_mail(split_message) #display the mail to the client 
+            display_mail(sender_message) #display the mail to the client 
         else:
             name = friend_ip_map[sender_address][0]
             send_ACK(sock, sender_address)
