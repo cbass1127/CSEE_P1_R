@@ -10,6 +10,7 @@ import time
 #accept_msg = 'Client table updated.'
 ACK_recvd = True
 ERR_recvd = False
+listening = True
 ACK_SC = 0
 client_ips = dict()
 friend_map = dict()
@@ -17,6 +18,7 @@ friend_ip_map = dict()
 lock = threading.Semaphore(1)
 server_dest = ('0.0.0.0', 0)
 my_name = ''
+
 
 def send_ACK(socket, addr):
     util.Send(socket, str(util.MAGIC_NUM).encode(), addr)
@@ -77,6 +79,18 @@ def notify_server_leave(sock, name, send_addr, local_SC):
         count+=1
     return status
 
+def notify_server_channel_msg(sock, message, send_addr, local_SC):
+    count = 0
+    status = False
+    while(count < 6 and (not status)):
+        util.Send(sock, message, send_addr)
+        status = wait_ACK(send_addr, local_SC, False)
+        count+=1
+    if status:
+        util.pmessage('Message recieved by server')
+    else:
+        util.pmessage('Server not responding')
+    return status
 
 def wait_ACK_ERR(local_SC):
     global ERR_recvd
@@ -138,24 +152,29 @@ def clnt_send_h(sock, inp, dest):
         global friend_map
         global friend_ip_map
         global server_dest
+        global listening
         if inp == '':
             return
         global ACK_recvd
         split_inp = inp.split()
-        if(split_inp[0] == 'send'):
-            name = split_inp[1]
-            message = split_inp[2].encode()
-            if name not in friend_map.keys(): 
+        if(split_inp[0] == 'send' or split_inp[0] == 'send_all'):
+            isbroadcast = split_inp[0] == 'send_all'
+            message = ('send_all ' + split_inp[1]).encode() if isbroadcast else split_inp[2].encode()
+            name = None if isbroadcast else split_inp[1]
+            info = None if isbroadcast else friend_map[name]
+            if not isbroadcast and name not in friend_map.keys(): 
                 util.pmessage('error: invalid name {0}'.format(name), False)
                 return
-            info = friend_map[name]
-            if(info[2]):
+            if(isbroadcast or info[2]):
                 lock.acquire()
-                util.Send(sock, message, (info[0], info[1]))
                 ACK_recvd = False
                 local_SC = ACK_SC
                 lock.release()
-                if not wait_ACK((info[0], info[1]), local_SC):
+                if not isbroadcast:
+                    util.Send(sock, message, (info[0], info[1]))
+                else:
+                    notify_server_channel_msg(sock, message, server_dest, local_SC)
+                if not isbroadcast and not wait_ACK((info[0], info[1]), local_SC):
                     lock.acquire()
                     local_SC = ACK_SC
                     lock.release()
@@ -166,6 +185,7 @@ def clnt_send_h(sock, inp, dest):
                 ERR_recvd = False
                 lock.release()
                 send_save_message(sock, name, message.decode(), local_SC)
+        
         elif(split_inp[0] == 'dereg'):
             lock.acquire()
             local_SC = ACK_SC
@@ -175,11 +195,11 @@ def clnt_send_h(sock, inp, dest):
             else:
                 util.pmessage('Server not responding')
                 util.pmessage('Exiting')
+            listening = False
         elif(split_inp[0] == 'reg' and len(split_inp) == 2):
             name = split_inp[1]
             reg_to_server(sock, name, server_dest)
-        
-
+            listening = True
 
 
 def clnt_send(sock, dest):
@@ -201,7 +221,8 @@ def clnt_listen(sock):
     global ACK_SC
     global server_dest
     global ERR_recvd
-    while(True):
+    global listening
+    while(listening):
         sender_message, sender_address = sock.recvfrom(util.SIZE)
         sender_message = sender_message.decode('UTF-8')
         if(sender_message == str(util.MAGIC_NUM)):
@@ -225,9 +246,9 @@ def clnt_listen(sock):
         elif split_message[0] == 'MAIL':
             display_mail(sender_message) #display the mail to the client 
         else:
-            name = friend_ip_map[sender_address][0]
+            name = friend_ip_map[sender_address][0] + ': ' if sender_address != server_dest else ''
             send_ACK(sock, sender_address)
-            util.pmessage(name +': ' +  sender_message)
+            util.pmessage(name +  sender_message)
 
 def main():
     global server_dest

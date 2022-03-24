@@ -4,7 +4,7 @@ import os
 import socket
 import signal
 import datetime
-
+import time
 
 accept_msg = 'Client table updated.'
 client_ips = dict()
@@ -19,6 +19,23 @@ def timeout_handler(signum, frame):
 def send_ACK(socket, addr):
     util.Send(socket, str(util.MAGIC_NUM).encode(), addr)
 
+#def wait_ACK(send_addr, local_SC, client = True):
+#    global ACK_recvd
+#    global ACK_SC
+#    name = ''
+#    if client:
+#        name = friend_ip_map[(send_addr[0], send_addr[1])][0]
+#    time.sleep(0.5)
+#    if(local_SC == ACK_SC):
+#        if client:
+#            friend_ip_map[(send_addr[0], send_addr[1])] = (name ,False)
+#            util.pmessage(' No ACK from ' + name + ' ,message sent to server.')
+#        return False
+#    else:
+#        if client:
+#            util.pmessage('Message recieved by ' + name + '.')
+#        return True
+#
 def send_ERR(socket, addr):
     s = str(util.MAGIC_NUM) + 'E'
     send_s = s.encode()
@@ -34,13 +51,29 @@ def server_setup():
     util.pmessage('', False)
     return server_sock
 
-
 def broadcast_update(socket, u_address, u_port, u_name, u_online_status):
     s = 'TU ' + u_address + ' ' + str(u_port) + ' ' + u_name + ' ' + str(int(u_online_status))
     send_s = str.encode(s)
     for dest in client_map.keys():
         util.Send(socket,send_s,dest)
 
+def broadcast_message(socket, sender_name, message):
+    for dest in client_map.keys():
+        s = 'Channel_Message ' + sender_name + ': ' + message 
+        sender_dest = (client_ips_map[sender_name][0], client_ips_map[sender_name][1])
+        if sender_dest != dest:
+            if client_ips_map[sender_name][2]:
+                send_s = s.encode()
+                util.Send(socket, send_s, dest)
+            else:
+                    p = client_map[dest][0]
+                    if os.path.exists(p):
+                        f = open(p, 'a')
+                    else:
+                        f = open(p, 'w')
+                    f.write(s + '\n')
+                    f.close()
+    
 def send_table(socket, dest):
     for client in client_map.keys():
         s = 'TU ' + client[0] + ' ' + str(client[1]) + ' ' + client_map[client][0] + ' ' + str(int(client_map[client][1]))
@@ -147,6 +180,11 @@ def main():
             client_ips_map[name] = (clnt_addr, clnt_port, True)
             broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
             util.pmessage(accept_msg)
-
+        elif len(split_message) == 2 and split_message[0] == 'send_all':
+            sender_name = client_map[sender_address][0]
+            message = split_message[1]
+            broadcast_message(server_sock, sender_name, message)
+            send_ACK(server_sock, sender_address)
+        
 if __name__ == '__main__':
     main()
