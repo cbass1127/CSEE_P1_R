@@ -62,10 +62,12 @@ def broadcast_message(socket, sender_name, message):
         s = 'Channel_Message ' + sender_name + ': ' + message 
         sender_dest = (client_ips_map[sender_name][0], client_ips_map[sender_name][1])
         if sender_dest != dest:
-            if client_ips_map[sender_name][2]:
+            #if client_ips_map[sender_name][2]:
+            if client_map[dest][1]:
                 send_s = s.encode()
                 util.Send(socket, send_s, dest)
             else:
+                    print('CLIENT OFFLINE')
                     p = client_map[dest][0]
                     if os.path.exists(p):
                         f = open(p, 'a')
