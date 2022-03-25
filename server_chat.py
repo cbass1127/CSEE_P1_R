@@ -171,7 +171,7 @@ def server_listen(server_sock, ACK = False):
             send_ACK(server_sock, sender_address)
             broadcast_update(server_sock, client_ips_map[name][0], client_ips_map[name][1], name, False)
             util.pmessage(accept_msg)
-        elif(len(split_message) == 3 and split_message[0] == 'sendsave' and split_message[1] in client_ips_map.keys()):
+        elif(len(split_message) >= 3 and split_message[0] == 'sendsave' and split_message[1] in client_ips_map.keys()):
             name = split_message[1]
             sender_name = client_map[sender_address][0]
             clnt_addr = client_ips_map[name][0]
@@ -184,7 +184,7 @@ def server_listen(server_sock, ACK = False):
                     f = open(p, 'a')
                 else:
                     f = open(p, 'w')
-                f.write(sender_name + ': ' + str(datetime.datetime.now()) + ' ' + split_message[2] + '\n')
+                f.write(sender_name + ': ' + str(datetime.datetime.now()) + ' ' + ' '.join(split_message[2:]) + '\n')
                 f.close()
                 if not isonline and client_ips_map[name][2] != isonline:
                     client_ips_map[name] = (clnt_addr, clnt_port, False)
@@ -203,9 +203,9 @@ def server_listen(server_sock, ACK = False):
             client_ips_map[name] = (clnt_addr, clnt_port, True)
             broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
             util.pmessage(accept_msg)
-        elif len(split_message) == 2 and split_message[0] == 'send_all':
+        elif len(split_message) >= 2 and split_message[0] == 'send_all':
             sender_name = client_map[sender_address][0]
-            message = split_message[1]
+            message = ' '.join(split_message[1:])
             send_ACK(server_sock, sender_address)
             broadcast_message(server_sock, sender_name, message)
         elif len(split_message) == 2 and split_message[0] == str(util.MAGIC_NUM):

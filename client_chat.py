@@ -163,7 +163,7 @@ def clnt_send_h(sock, inp, dest):
         split_inp = inp.split()
         if(split_inp[0] == 'send' or split_inp[0] == 'send_all'):
             isbroadcast = split_inp[0] == 'send_all'
-            message = ('send_all ' + split_inp[1]).encode() if isbroadcast else split_inp[2].encode()
+            message = ('send_all ' + ' '.join(split_inp[1:])).encode() if isbroadcast else ' '.join(split_inp[2:]).encode()
             name = None if isbroadcast else split_inp[1]
             info = None if isbroadcast else friend_map[name]
             if not isbroadcast and name not in friend_map.keys(): 
