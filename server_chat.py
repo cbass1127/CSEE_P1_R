@@ -5,13 +5,15 @@ import socket
 import signal
 import datetime
 import time
+import threading
 
 accept_msg = 'Client table updated.'
 client_ips = dict()
 client_ips_map = dict()
 client_map = dict()
-
-
+listening = False
+name_set = set()
+server_sock = None
 
 def timeout_handler(signum, frame):
     raise util.TimoutException('timout!')
@@ -58,24 +60,43 @@ def broadcast_update(socket, u_address, u_port, u_name, u_online_status):
         util.Send(socket,send_s,dest)
 
 def broadcast_message(socket, sender_name, message):
+    global listening
+    global name_set
     for dest in client_map.keys():
         s = 'Channel_Message ' + sender_name + ': ' + message 
         sender_dest = (client_ips_map[sender_name][0], client_ips_map[sender_name][1])
         if sender_dest != dest:
             #if client_ips_map[sender_name][2]:
-            if client_map[dest][1]:
-                send_s = s.encode()
-                util.Send(socket, send_s, dest)
-            else:
-                    print('CLIENT OFFLINE')
-                    p = client_map[dest][0]
-                    if os.path.exists(p):
-                        f = open(p, 'a')
-                    else:
-                        f = open(p, 'w')
-                    f.write(s + '\n')
-                    f.close()
-    
+            #if client_map[dest][1]:
+            send_s = s.encode()
+            util.Send(socket, send_s, dest)
+           # else:
+           #         p = client_map[dest][0]
+           #         if os.path.exists(p):
+           #             f = open(p, 'a')
+           #         else:
+           #             f = open(p, 'w')
+           #         f.write(s + '\n')
+           #         f.close()
+    listen_thread = threading.Thread(target = server_listen, args = (server_sock, True)) 
+    listening = True
+    name_set = set(client_ips_map.keys())
+    name_set.remove(sender_name)
+    listen_thread.start()
+    time.sleep(0.5)
+    listening = False
+    for name in name_set:
+        p = name
+        if os.path.exists(p):
+            f = open(p, 'a')
+        else:
+            f = open(p, 'w')
+        f.write(s + '\n')
+        f.close()
+
+    listen_thread.join()
+
+
 def send_table(socket, dest):
     for client in client_map.keys():
         s = 'TU ' + client[0] + ' ' + str(client[1]) + ' ' + client_map[client][0] + ' ' + str(int(client_map[client][1]))
@@ -127,11 +148,11 @@ def clnt_online(sock, addr):
     util.Send(sock, send_s, addr)
     wait_online_ACK(sock)
 
-def main():
-    if len(sys.argv) != 2:
-        util.Die('usage: {0} -s <port>'.format(util.MAIN_P))
-    signal.signal(signal.SIGALRM, timeout_handler)
-    server_sock = server_setup()
+
+def server_listen(server_sock, ACK = False):
+    global listening
+    global name_set
+    condition = listening if ACK else True
     while(True): 
         sender_message, sender_address = server_sock.recvfrom(util.SIZE)
         sender_message = sender_message.decode('UTF-8')
@@ -175,9 +196,9 @@ def main():
                 broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
         elif(len(split_message) == 2 and split_message[0] == str(util.MAGIC_NUM) + 'R'):
             name = split_message[1]
-            send_mail(server_sock, name, (clnt_addr, clnt_port))
             clnt_addr = client_ips_map[name][0]
             clnt_port = client_ips_map[name][1]
+            send_mail(server_sock, name, (clnt_addr, clnt_port))
             client_map[(clnt_addr, clnt_port)] = (name, True)
             client_ips_map[name] = (clnt_addr, clnt_port, True)
             broadcast_update(server_sock, clnt_addr, clnt_port, name, True)
@@ -185,8 +206,18 @@ def main():
         elif len(split_message) == 2 and split_message[0] == 'send_all':
             sender_name = client_map[sender_address][0]
             message = split_message[1]
-            broadcast_message(server_sock, sender_name, message)
             send_ACK(server_sock, sender_address)
-        
+            broadcast_message(server_sock, sender_name, message)
+        elif len(split_message) == 2 and split_message[0] == str(util.MAGIC_NUM):
+            name = split_message[1]
+            if name in name_set:
+                name_set.remove(name)
+
+def main():
+    global server_sock
+    if len(sys.argv) != 2:
+        util.Die('usage: {0} -s <port>'.format(util.MAIN_P))
+    server_sock = server_setup()
+    server_listen(server_sock) 
 if __name__ == '__main__':
     main()

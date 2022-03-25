@@ -20,8 +20,12 @@ server_dest = ('0.0.0.0', 0)
 my_name = ''
 
 
-def send_ACK(socket, addr):
-    util.Send(socket, str(util.MAGIC_NUM).encode(), addr)
+def send_ACK(socket, addr, use_name = False, name = ''):
+    if not use_name:
+        util.Send(socket, str(util.MAGIC_NUM).encode(), addr)
+    else:
+        s = str(util.MAGIC_NUM) + ' ' + name
+        util.Send(socket, s.encode(), addr)
 
 def timeout_handler(signum, frame):
     raise util.timoutexception('timout!')
@@ -32,7 +36,7 @@ def wait_ACK_h(local_SC):
         pass
 
 
-def wait_ACK(send_addr, local_SC, client = True):
+def wait_ACK(send_addr, local_SC, client = True, duration = 0.5):
     global ACK_recvd
     global ACK_SC
     name = ''
@@ -54,7 +58,7 @@ def wait_ACK(send_addr, local_SC, client = True):
 #        signal.alarm(0)
 #        return False
 
-    time.sleep(0.5)
+    time.sleep(duration)
     if(local_SC == ACK_SC):
         if client:
             friend_ip_map[(send_addr[0], send_addr[1])] = (name ,False)
@@ -84,7 +88,7 @@ def notify_server_channel_msg(sock, message, send_addr, local_SC):
     status = False
     while(count < 6 and (not status)):
         util.Send(sock, message, send_addr)
-        status = wait_ACK(send_addr, local_SC, False)
+        status = wait_ACK(send_addr, local_SC, False, 0.5)
         count+=1
     if status:
         util.pmessage('Message recieved by server')
@@ -190,12 +194,12 @@ def clnt_send_h(sock, inp, dest):
             lock.acquire()
             local_SC = ACK_SC
             lock.release()
+            listening = False
             if notify_server_leave(sock, split_inp[1],server_dest, local_SC):
                 util.pmessage('You are Offline. Bye')
             else:
                 util.pmessage('Server not responding')
                 util.pmessage('Exiting')
-            listening = False
         elif(split_inp[0] == 'reg' and len(split_inp) == 2):
             name = split_inp[1]
             reg_to_server(sock, name, server_dest)
@@ -222,7 +226,7 @@ def clnt_listen(sock):
     global server_dest
     global ERR_recvd
     global listening
-    while(listening):
+    while(True):
         sender_message, sender_address = sock.recvfrom(util.SIZE)
         sender_message = sender_message.decode('UTF-8')
         if(sender_message == str(util.MAGIC_NUM)):
@@ -245,7 +249,10 @@ def clnt_listen(sock):
             send_ACK(sock, server_dest)
         elif split_message[0] == 'MAIL':
             display_mail(sender_message) #display the mail to the client 
-        else:
+        elif split_message[0] == 'Channel_Message' and listening:
+            send_ACK(sock, server_dest, True, my_name)
+            util.pmessage(sender_message)
+        elif listening:
             name = friend_ip_map[sender_address][0] + ': ' if sender_address != server_dest else ''
             send_ACK(sock, sender_address)
             util.pmessage(name +  sender_message)
@@ -257,9 +264,9 @@ def main():
         util.Die('usage: {0} -c <name> <server-ip> <server-port> <client-port>'.format(util.MAIN_P))
     signal.signal(signal.SIGALRM, timeout_handler)
     server_dest = ( sys.argv[2], util.Port(sys.argv[3]))
-    my_name = str.encode(sys.argv[1])
+    my_name = sys.argv[1]
     my_sock = clnt_setup()
-    util.Send(my_sock, my_name, server_dest)
+    util.Send(my_sock, str.encode(my_name), server_dest)
 
     send_thread = threading.Thread(target = clnt_send, args = (my_sock, server_dest))
     listen_thread = threading.Thread(target = clnt_listen, args = (my_sock, ))
