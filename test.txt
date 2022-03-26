@@ -1,0 +1,334 @@
+test 1:
+
+SERVER: 
+
+python3 ChatApp.py -s 6009
+
+RON:
+
+python3 ChatApp.py -c RON 127.0.0.1 6009 6012
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [SEB: hello there ron]
+>> 
+>> [BOB: waddap ron jon]
+>> 
+>>  
+>>  send SEB hello there sebbykins
+
+>> [Message recieved by SEB.]
+>> >>  
+>>  
+>>  send BOB bobby is the bestie
+
+>> [Message recieved by BOB.]
+>> >>  
+>>  
+>>  
+>> [Client table updated.]
+>> send SEB are you there its RON
+
+>> [Messages recieved by the server and saved]
+>> >>  
+>> [Client table updated.]
+
+
+BOB:
+
+python3 ChatApp.py -c BOB 127.0.0.1 6009 6011
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [SEB: hello there bobby]
+>>    
+>>  
+>>  send SEB sebby is the best
+
+>> [Message recieved by SEB.]
+>> >>  
+>>  
+>>  send RON waddap ron jon
+
+>> [Message recieved by RON.]
+>> >>  
+>>  
+>>  
+>>  
+>> [RON: bobby is the bestie]
+>> 
+>> [Client table updated.]
+>> 
+>>  send SEB are you there its BOB
+
+>> [Messages recieved by the server and saved]
+>> >>  
+>> [Client table updated.]
+
+
+
+SEB:
+
+python3 ChatApp.py -c SEB 127.0.0.1 6009 6010
+>>  
+>> [Client table updated.]
+>> 
+>>  
+>>  send RON hello there ron
+
+>> [Message recieved by RON.]
+>> >>  send BOB hello there bobby
+
+>> [Message recieved by BOB.]
+>> >>  
+>> [BOB: sebby is the best]
+>> 
+>> [RON: hello there sebbykins]
+>> 
+>>  
+>>  dereg SEB
+
+>> [Client table updated.]
+>> 
+>> [You are Offline. Bye]
+>> >>  
+>>  
+>>  
+>>  reg SEB
+>>  
+>> [YOU HAVE MESSAGES]
+>> >> BOB: 2022-03-26 03:15:07.809973 are you there its BOB
+ >> RON: 2022-03-26 03:15:14.722663 are you there its RON
+ 
+>> [Client table updated.]
+
+
++====================================================================
+
+test 2:
+
+SERVER:
+
+ python3 ChatApp.py -s 6009
+>>  ^CTraceback (most recent call last):
+  File "server_chat.py", line 262, in <module>
+    main()
+  File "server_chat.py", line 260, in main
+    server_listen(server_sock) 
+  File "server_chat.py", line 190, in server_listen
+    sender_message, sender_address = server_sock.recvfrom(util.SIZE)
+KeyboardInterrupt
+
+RON:
+
+python3 ChatApp.py -c RON 127.0.0.1 6009 6012
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> send SEB are you there????
+
+>> [Sendsave message failed. Try again.]
+>> >>
+
+SEB:
+
+python3 ChatApp.py -c SEB 127.0.0.1 6009 6010
+>>  
+>> [Client table updated.]
+>> dereg SEB
+
+>> [Client table updated.]
+>> 
+>> [You are Offline. Bye]
+>> >>
+
+
++======================================================================
+
+test 3:
+
+SERVER:
+
+python3 ChatApp.py -s 6009
+
+
+RON:
+
+python3 ChatApp.py -c RON 127.0.0.1 6009 6012
+>>  
+>> [Client table updated.]
+>> 
+>>  
+>>  
+>> [Channel_Message SEB: GREETINGS AND SALUTATIONS MY GOOD PEOPLE!!!]
+
+BOB:
+
+>>  
+>> [Client table updated.]
+>> 
+>>  
+>>  
+>>  
+>>  
+>>  
+>>  
+>> [Client table updated.]
+>> 
+>> [Channel_Message SEB: GREETINGS AND SALUTATIONS MY GOOD PEOPLE!!!]
+>> 
+
+SEB:
+
+python3 chatter.py -c SEB 127.0.0.1 6009 6010
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>>  
+>>  send_all GREETINGS AND SALUTATIONS MY GOOD PEOPLE!!!
+
+>> [Message recieved by server]
+
+
++======================================================
+
+test 4:
+
+server:
+
+python3 ChatApp.py -s 6009
+>>
+
+
+SEB:
+
+python3 chatter.py -c SEB 127.0.0.1 6009 6010
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> send SEB hello there
+
+>> [SEB: hello there]
+>> 
+>> [Message recieved by SEB.]
+>> >>  
+>>  
+>>  
+>>  send RON are you there or naw
+
+>> [ No ACK from RON ,message sent to server.]
+>> 
+>> [Messages recieved by the server and saved]
+>> >>  
+>> [Client table updated.]
+>> sen   
+>>  
+>>  
+>>  send BOB are you there BOB
+
+>> [ No ACK from BOB ,message sent to server.]
+>> 
+>> [Messages recieved by the server and saved]
+>> >>  
+>>  
+>>
+
+RON:
+
+python3 ChatApp.py -c RON 127.0.0.1 6009 6012
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> ^CTraceback (most recent call last):
+  File "client_chat.py", line 332, in <module>
+    main()
+  File "client_chat.py", line 327, in main
+    send_thread.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+^CException ignored in: <module 'threading' from '/usr/lib/python3.6/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/threading.py", line 1294, in _shutdown
+    t.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+
+ python3 ChatApp.py -c RON 127.0.0.1 6009 6012
+>>  reg RON
+>>  
+>> [YOU HAVE MESSAGES]
+>> >> SEB: 2022-03-26 03:35:30.179527 are you there or naw
+ 
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+
+BOB:
+
+python3 ChatApp.py -c BOB 127.0.0.1 6009 6011
+>>  
+>> [Client table updated.]
+>> 
+>> [Client table updated.]
+>> ^CTraceback (most recent call last):
+  File "client_chat.py", line 332, in <module>
+    main()
+  File "client_chat.py", line 327, in main
+    send_thread.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+^CException ignored in: <module 'threading' from '/usr/lib/python3.6/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/threading.py", line 1294, in _shutdown
+    t.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+
+python3 ChatApp.py -c BOB 127.0.0.1 6009 6011
+>>  reg BOB
+
+>> [YOU HAVE MESSAGES]
+>> >> SEB: 2022-03-26 03:36:06.351903 are you there BOB
+ 
+>> [Client table updated.]
+>> >>  
+>>  
+>>  
+>>  
+>>  send SEB im backkkkkkkk
+
+>> [Message recieved by SEB.]
+>> >>  
+>>  
+>>  
+
+

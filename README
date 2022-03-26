@@ -1,0 +1,44 @@
+name: Sebastian Hereu
+UNI: smh2278
+
+
+Given that this is a python program, compiliation is not needed.
+
+To run in client mode:
+
+	python3 ChatApp.py -c <name> <server-ip> <server-port> <client-port>
+
+To run in server mode:
+
+	python3 ChatApp.py -s <server-port>
+
+
+
+Overall, ChatApp.py is a communication framework that has the functionality of peer-to-peer conversations as well as broadcasted conversations via the server. The server keeps track of clients
+in the network as well as the clients individually. If a client deregisters via either a silent or notified leave, messages for that client are stored and transmitted to them when they register again
+to the network. ChatApp.py uses UDP and has a custom system of ACKs.
+	
+The client side of ChatApp.py uses a 2-thread paradigm: one thread for sending outgoing requests and one thread for listening for incoming messages. 
+The server side of ChatApp.py uses mostly a single while-loop with the exception of an extra thread being spawned when waiting for ACKS with broadcast messages.
+
+
+Summary of Files:
+	ChatApp.py - starts up either server or client instance of ChatApp based on flag (-s, -c)
+	util.py	-   contains helper functions, like the one that prints a prompt. Also contains hard-coded MAGIC_NUM that are used with ACKS.
+		This is done because it is highly unlikely a user can enter this number on purpose, and it stops malicious users from messing with the internals
+		of the program.
+	client_chat.py - contains all of the client functionality. Activated by ChatApp.py
+	server_chat.py - contains all of the server functioanlity. Activated by ChatApp.py
+	test.txt - contains some test runs with given test scenarios.
+
+The two main programs - cient_chat.py and server_chat.py - do not use any fancy data structures or algorithms. Rather, basic structueres like maps are used to keep track
+of the state of all the clients in the network. As mentioned before, multi-threading was used as it makes for a more intuitive send-wait architecure. When one thead is focused on waiting
+and the other on sending, implementation is more simple and intutive. The libraries used were basic.
+
+
+NOTE: If a client performs a silent leave (via hitting ctrl-c or exiting the window), then they should register again with the server upon connecting with the same information:
+		reg <name_of_client>	
+
+
+
+

@@ -163,6 +163,7 @@ def display_mail(messages):
     '''
     util.pmessage('YOU HAVE MESSAGES')
     lines = messages.split('\n') 
+    lines[0] = lines[0][5:]
     for line in lines:
         if line.strip() != '':
             util.pmessage(line + '\n', False)

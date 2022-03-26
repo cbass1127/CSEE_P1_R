@@ -82,6 +82,7 @@ def broadcast_message(socket, sender_name, message):
     listen_thread.start() #start ACK-waiting thread
     time.sleep(0.5)
     listening = False
+    s = 'Channel_Message ' + sender_name + ': ' + str(datetime.datetime.now()) + ' ' +  message 
     for name in name_set:
         p = name
         if os.path.exists(p):
