@@ -18,6 +18,8 @@ lock = threading.Semaphore(1)
 server_dest = ('0.0.0.0', 0)
 my_name = ''
 accept_msg = 'Client table updated.'
+KILL = False
+
 
 def send_ACK(socket, addr, use_name = False, name = ''):
     '''
@@ -220,16 +222,16 @@ def clnt_send_h(sock, inp, dest):
             local_SC = ACK_SC   #capture global ACK state to wait for ACK in notify_server_leave
             lock.release()
             listening = False
-            if name not in friend_ip_map.keys() and name != my_name:
+            if name not in friend_map.keys() and name != my_name:
                 return
-            if notify_server_leave(sock, split_inp[1],server_dest, local_SC):
+            if notify_server_leave(sock, name ,server_dest, local_SC):
                 util.pmessage('You are Offline. Bye')
             else:
                 util.pmessage('Server not responding')
                 util.pmessage('Exiting')
         elif(split_inp[0] == 'reg' and len(split_inp) == 2):
             name = split_inp[1]
-            if name not in friend_ip_map.keys() and name != my_name:
+            if name not in friend_map.keys() and name != my_name:
                 return
             reg_to_server(sock, name, server_dest)
             listening = True
@@ -240,7 +242,7 @@ def clnt_send(sock, dest):
     Main loop for sending thread of client. Waits for input from client on infinite loop.
     :return: None
     '''
-    while(True):
+    while(not KILL):
         util.pmessage('', False)
         inp = input()
         clnt_send_h(sock, inp, dest)
@@ -250,11 +252,15 @@ def update_table(fields, display= False):
     Updates global friend_table w/ information sent by server.
     :return: None
     '''
+    global my_name
     global friend_map
     global friend_id_map
     global accept_msg
+    global listening 
     friend_map[fields[2]] = (fields[0], int(fields[1]), bool(int(fields[3])))
     friend_ip_map[(fields[0], int(fields[1]))] = (fields[2], bool(int(fields[3])))
+    if fields[2] == my_name and not friend_map[fields[2]][2]:
+        listening = False
     if display:
         util.pmessage(accept_msg)
 
@@ -269,6 +275,7 @@ def clnt_listen(sock):
     global ERR_recvd
     global listening
     global my_name
+    global KILL
     while(True):
         sender_message, sender_address = sock.recvfrom(util.SIZE)
         sender_message = sender_message.decode('UTF-8')
@@ -298,6 +305,10 @@ def clnt_listen(sock):
         elif split_message[0] == 'Channel_Message' and listening:
             send_ACK(sock, server_dest, True, my_name)
             util.pmessage(sender_message)
+        elif listening and sender_message == 'nick name already exists!':
+            util.pmessage(sender_message)
+            KILL = True
+            return
         elif listening: # if we get here we know that this is a message
             name = friend_ip_map[sender_address][0] + ': ' if sender_address != server_dest else ''
             send_ACK(sock, sender_address)

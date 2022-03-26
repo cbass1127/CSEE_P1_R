@@ -15,6 +15,8 @@ listening = False
 name_set = set()
 server_sock = None
 ACK_SC = 0
+KILL = False
+
 
 
 def timeout_handler(signum, frame):
@@ -191,10 +193,14 @@ def server_listen(server_sock, ACK = False):
         sender_message, sender_address = server_sock.recvfrom(util.SIZE)
         sender_message = sender_message.decode('UTF-8')
         if sender_address not in client_map.keys():
-            online_status = True
-            send_table(server_sock, sender_address)
-            add_client(sender_address[0], sender_address[1], sender_message, online_status)
-            broadcast_update(server_sock, sender_address[0], sender_address[1], sender_message, online_status)
+            if sender_message in client_ips_map.keys():
+                util.Send(server_sock, 'nick name already exists!'.encode(), (sender_address[0], sender_address[1]))
+            else:
+                online_status = True
+                send_table(server_sock, sender_address)
+                add_client(sender_address[0], sender_address[1], sender_message, online_status)
+                broadcast_update(server_sock, sender_address[0], sender_address[1], sender_message, online_status)
+                util.Send(server_sock, 'Welcome, You are registered.'.encode(), (sender_address[0], sender_address[1]))
         split_message = sender_message.split()
         if(len(split_message) == 2 and split_message[0] == 'dereg' and split_message[1] in client_ips_map.keys()): #dereg request
             name = split_message[1]
