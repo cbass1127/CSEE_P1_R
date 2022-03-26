@@ -140,7 +140,10 @@ def clnt_setup():
     '''
     my_port = util.Port(sys.argv[4]) 
     clnt_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); 
-    clnt_sock.bind(('0.0.0.0', my_port))
+    try:
+        clnt_sock.bind(('0.0.0.0', my_port))
+    except:
+        util.Die('Could Not bind to port '+ str(my_port))
     return clnt_sock
 
 
